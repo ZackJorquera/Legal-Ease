@@ -1,0 +1,58 @@
+
+:root {
+  /* --mint: #98ff98; */
+  --mint: #77f277;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+li {
+  float: left;
+}
+
+li img{
+  display: block;
+  padding: 14px 16px;
+  height: min(20vw, 20vh);
+}
+
+
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: max(15vh, 7%);
+}
+
+.box div {
+  width: 75%; 
+  height: 75%;
+}
+
+.main {
+  color: WhiteSmoke;
+  font-size: min(5vw, 7vh);
+  text-align: center;
+  font-family: "Open Sans", sans-serif;
+}
+
+#triangle {
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 0;
+  left: -50%;
+  border-top: 110vh solid var(--mint);
+  border-left: 148vw solid transparent;
+  z-index: -1;
+}
+
+.logo {
+  filter: invert(1);
+  position: absolute;
+}
