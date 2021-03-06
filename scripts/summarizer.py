@@ -4,10 +4,19 @@ from knapsacky import knapsack
 import numpy as np
 from enum import Enum
 import math
+#import lexnlp.extract.en.conditions
+
+from sklearn.feature_extraction import text
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+specified_stops = text.ENGLISH_STOP_WORDS.union(["english", "law"])
+print(list(specified_stops))
 stop_words = ["", " ", "\n", "i", "me", "my", "oh", 'mr', 'mrs', 'ms', 'dr', 'said', "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"]
 
+stop_words = set(stop_words)
+new_stop_words = set(specified_stops)
+stop_words = list(stop_words|new_stop_words)
 
 class SummarizerSettings(Enum):
     # At the moment this is hardcoded, but in the future it might be cool to include a settings file
@@ -15,9 +24,10 @@ class SummarizerSettings(Enum):
     UNDER_MEAN = 1  # For any word with number of occurrences below the mean, this is added
     PER_WORD = 0  # baseline number of points added for every word
     CHAR_MULT = 1 / 3  # For every character in a word above 6 character it will receive this many points.
-    WORD_THRES = 3  # Only sentences with this many or more words will be considered
+    WORD_THRES = 15  # Only sentences with this many or more words will be considered
     SW_VAL = 0  # Number of points a sentence gets for each stop word
     SENTENCE_LOC_MULT = 5  # gives sentence at the start and end more value with first and last receiving 5 extra points
+    KEY_WORD_VAL = 2
 
 
 class Summarizer:
@@ -100,7 +110,9 @@ class Summarizer:
             if len(self.__sentences[s]) < SummarizerSettings.WORD_THRES.value:
                 self.__sentences[s].value = 0
                 continue
-
+            #LEXNLP checker
+#            if(lexnlp.extract.en.conditions.get_conditions(self.__setences[s].text)):
+ #               print(self.__sentences[s].text)
             self.__sentences[s].value += SummarizerSettings.SENTENCE_LOC_MULT.value * 4 * math.pow(
                 s - num_sentences / 2, 2) / (math.pow(num_sentences, 2))
 
