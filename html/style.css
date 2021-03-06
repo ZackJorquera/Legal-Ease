@@ -17,8 +17,8 @@ li {
 
 li img{
   display: block;
-  padding: 14px 16px;
-  height: min(20vw, 20vh);
+  padding: 1vh 1vw;
+  height: min(15vw, 20vh);
 }
 
 
@@ -26,7 +26,7 @@ li img{
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: max(15vh, 7%);
+  margin-top: 10vh;
 }
 
 .box div {
@@ -41,16 +41,38 @@ li img{
   font-family: "Open Sans", sans-serif;
 }
 
+#fileSelect {
+  background-color: transparent;
+  color: WhiteSmoke;
+  font-family: "Open Sans", sans-serif;
+  font-size: min(5vw, 7vh);
+  border-style: dashed;
+  border-radius: 10px;
+  padding: 5%;
+  border-width: thick;
+  border-color: whitesmoke;
+  margin-top: 0.2em;
+}
+
+.upload {
+  display: flex;
+  margin-left: 15%;
+  justify-content: center;
+}
+
 #triangle {
   width: 0;
   height: 0;
   position: absolute;
   top: 0;
   left: -50%;
-  border-top: 110vh solid var(--mint);
-  border-left: 148vw solid transparent;
+  border-top: 120vh solid var(--mint);
+  border-left: 150vw solid transparent;
   z-index: -1;
 }
+
+html, body {margin: 0; height: 100%; overflow: hidden}
+
 
 .logo {
   filter: invert(1);
