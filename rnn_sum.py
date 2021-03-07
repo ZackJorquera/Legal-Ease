@@ -7,6 +7,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras import backend
 import os
 from datetime import datetime
+from sentence import *
 
 
 # TODO: move to `__init__` input
@@ -229,9 +230,18 @@ def load_data(sent_file, class_file):
 
     return sents, classes
 
+def sentence_to_rnn_vals(sentences, rnn_weights_path=None):  # "model/final.ckpt"
+    summer = RnnSummarizer()
+    if rnn_weights_path is not None:
+        summer.load_weights(rnn_weights_path)
+
+    sent_array_str = [sentence.text for sentence in sentences]
+    vals = summer.classify(sent_array_str)
+    for i in range(len(sentences)):
+        sentences[i].rnn_val = vals[i]
+
 
 if __name__ == '__main__':
-
     sents, classifs = load_data('data/sentences.txt', 'data/classifications.txt')
 
     summer = RnnSummarizer()
