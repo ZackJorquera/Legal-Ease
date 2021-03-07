@@ -63,7 +63,7 @@ body {
   left: -50%;
   border-top: 120vh solid var(--mint);
   border-left: 150vw solid transparent;
-  z-index: -1;
+  z-index: -1 !important;
 }
 
 html, body {
@@ -111,15 +111,12 @@ html, body {
   text-align: center;
   border-radius: 6px;
   position: absolute !important;
-  z-index: 9999 !important;
   bottom: 150%;
   left: 50%;
   margin-left: -100px;
-  opacity: 0;
   overflow-wrap: break-word !important;
   font-family: Arial;
   font-size: medium;
-  transition: opacity 0.25s;
 }
 
 .tooltip .tooltiptext::after {
@@ -135,7 +132,6 @@ html, body {
 
 .tooltip:hover .tooltiptext {
   visibility: visible;
-  opacity: 1;
 }
 
 .itm {
@@ -151,12 +147,15 @@ html, body {
   margin-top: 1%;
   background-color: whitesmoke;
   border-radius: 10px;
-  padding-right: 2vw;
   border: 1px solid #4a4a4a;
   box-shadow: 7px 5px #4a4a4a;
   overflow-y:auto !important;
-  max-height: 60vh;
+  max-height: min(50vh, 120vw);
+  padding: 5% 7% 3% 7%;
+}
 
+hr {
+  border: 1px solid var(--mint);
 }
 
 ::-webkit-scrollbar {
