@@ -43,7 +43,7 @@ body {
   background-color: transparent;
   color: var(--offwhite);
   font-family: "Open Sans", sans-serif;
-  font-size: min(5vw, 7vh);
+  font-size: 5vh;
   border-style: solid;
   border-radius: 10px;
   padding: 3%;
