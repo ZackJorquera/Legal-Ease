@@ -105,7 +105,7 @@ class RnnSummarizer(object):
 
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-            backend.set_value(model.optimizer.learning_rate, 0.01)
+            backend.set_value(model.optimizer.learning_rate, 0.1)
         self.model = model
 
         # # we use the encoder_model_get_state and encoder_model_with_state to interface with the model
@@ -135,13 +135,14 @@ class RnnSummarizer(object):
     def load_weights_from_dir(self, weight_dir):
         latest_ckpt = tf.train.latest_checkpoint(weight_dir)
         if latest_ckpt is not None:
+            print(f"load network from {latest_ckpt}")
             with strategy.scope():
                 self.model.load_weights(latest_ckpt)
 
     def save_weights(self, weight_file_path):
         self.model.save_weights(weight_file_path)
 
-    def fit(self, x_train, y_train, x_test, y_test, epochs=None, batch_size=None, model_dir_path=None, log_dir_path=None):
+    def fit(self, x_train, y_train, x_test, y_test, epochs=None, epoch_offset=0, batch_size=None, model_dir_path=None, log_dir_path=None):
         now = datetime.now()
         if epochs is None:
             epochs = 10
@@ -180,7 +181,9 @@ class RnnSummarizer(object):
             else:
                 x_test, y_test = None, None
 
-            history = self.model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, callbacks=[checkpoint, tb_cb])
+            history = self.model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
+                                     validation_data=None if x_test is None else (x_test, y_test),
+                                     callbacks=[checkpoint, tb_cb], initial_epoch=epoch_offset)
 
         return history
 
@@ -291,13 +294,13 @@ def sentence_to_rnn_vals(sentences, rnn_weights_dir='model'):
 
 
 if __name__ == '__main__':
-    sents, classifs = load_data('data/sentences.txt', 'data/classifications.txt')
+    sents, classifs = load_data('../data/sentences.txt', '../data/classifications.txt')
 
     summer = RnnSummarizer()
     #summer.summary()
     #summer.load_weights_unchecked("../model/checkpoints/20210307-010803/cp-18.ckpt")
-    # summer.load_weights_from_dir('../model')
-    summer.fit(sents, classifs, None, None, epochs=100)
+    # summer.load_weights_from_dir('../model/checkpoints/20210307-084126')
+    summer.fit(sents, classifs, None, None, epochs=100, epoch_offset=20)
     summer.save_weights("model/final.ckpt")
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
