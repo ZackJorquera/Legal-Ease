@@ -4,6 +4,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.text import one_hot
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras import backend
 import os
 from datetime import datetime
 
@@ -61,33 +62,43 @@ class RnnSummarizer(object):
     def __init__(self):
         self.vocab_size = CONFIG_MAX_WORDS
         # TODO: make Bidirectional: https://www.tensorflow.org/tutorials/text/text_classification_rnn
-        encoder_input = layers.Input(shape=(None,), name='encoder_input')
-        encoder_embedded = layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
-                                            input_length=CONFIG_MAX_INPUT_LEN)(encoder_input)
-        encoder_lstm = layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=True, name="encoder")
-        encoder_output, encoder_state_h, encoder_state_c = encoder_lstm(encoder_embedded)
-        encoder_state = [encoder_state_h, encoder_state_c]
-
-        decoder_dense = layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
-        dense_output = decoder_dense(encoder_output)
-
-        self.max_input_seq_length = 10000
+        # encoder_input = layers.Input(shape=(None,), name='encoder_input')
+        # encoder_embedded = layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
+        #                                     input_length=CONFIG_MAX_INPUT_LEN)(encoder_input)
+        # encoder_lstm = layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=True, name="encoder")
+        # encoder_output, encoder_state_h, encoder_state_c = encoder_lstm(encoder_embedded)
+        # encoder_state = [encoder_state_h, encoder_state_c]
+        #
+        # decoder_dense = layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
+        # dense_output = decoder_dense(encoder_output)
 
         # this is complicated, i will comment (or ask me, i think it understands)
-        model = keras.Model(encoder_input, dense_output)
+        #model = keras.Model(encoder_input, dense_output)
+
+        model = keras.Sequential([
+            layers.Input(shape=(None,), name='encoder_input'),
+            layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
+                             input_length=CONFIG_MAX_INPUT_LEN),
+            layers.Bidirectional(layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=False, name="encoder")),
+            layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
+        ])
+
+        self.max_input_seq_length = CONFIG_MAX_INPUT_LEN
 
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+        backend.set_value(model.optimizer.learning_rate, 0.01)
         self.model = model
 
-        # we use the encoder_model_get_state and encoder_model_with_state to interface with the model
-        self.encoder_model_get_state = keras.Model(encoder_input, encoder_state)
+        # # we use the encoder_model_get_state and encoder_model_with_state to interface with the model
+        # self.encoder_model_get_state = keras.Model(encoder_input, encoder_state)
+        #
+        # encoder_state_input = [layers.Input(shape=(CONFIG_INTERNAL_UNITS,)), layers.Input(shape=(CONFIG_INTERNAL_UNITS,))]
+        # encoder_output, encoder_state_h, encoder_state_c = encoder_lstm(encoder_embedded, initial_state=encoder_state_input)
+        # encoder_state = [encoder_state_h, encoder_state_c]
+        # dense_output = decoder_dense(encoder_output)
+        # self.encoder_model_with_state = keras.Model([encoder_input] + encoder_state_input, [dense_output] + encoder_state)
 
-        encoder_state_input = [layers.Input(shape=(CONFIG_INTERNAL_UNITS,)), layers.Input(shape=(CONFIG_INTERNAL_UNITS,))]
-        encoder_output, encoder_state_h, encoder_state_c = encoder_lstm(encoder_embedded, initial_state=encoder_state_input)
-        encoder_state = [encoder_state_h, encoder_state_c]
-        dense_output = decoder_dense(encoder_output)
-        self.encoder_model_with_state = keras.Model([encoder_input] + encoder_state_input, [dense_output] + encoder_state)
 
     # def summary(self):
     #     self.model.summary()
@@ -96,12 +107,13 @@ class RnnSummarizer(object):
 
     def summary(self):
         self.model.summary()
-        self.encoder_model_get_state.summary()
-        self.encoder_model_with_state.summary()
+        #self.encoder_model_get_state.summary()
+        #self.encoder_model_with_state.summary()
 
     def load_weights(self, weight_file_path):
-        if os.path.exists(weight_file_path):
-            self.model.load_weights(weight_file_path)
+        #checkpoints = tf.train.get_checkpoint_state('checkpoints').all_model_checkpoint_paths
+        #if os.path.exists(weight_file_path):
+        self.model.load_weights(weight_file_path)
 
     def save_weights(self, weight_file_path):
         self.model.save_weights(weight_file_path)
@@ -172,7 +184,6 @@ class RnnSummarizer(object):
         input_seq_lines = [np.array(encoded_line).reshape((1,-1,1)) for encoded_line in encoded_lines]
         #print(input_seq, input_seq_lines)
 
-        states_value = self.encoder_model_get_state.predict(input_seq)
         output_data = []
 
         if not recurrent:
@@ -192,6 +203,7 @@ class RnnSummarizer(object):
                     output_data.append(sample_token_idx)
                     print(output_tokens)
         else:
+            states_value = self.encoder_model_get_state.predict(input_seq)
             for input_line_seq in input_seq_lines:
                 output_tokens, h, c = self.encoder_model_with_state.predict([np.asarray(input_line_seq)] + states_value)
 
@@ -219,9 +231,10 @@ if __name__ == '__main__':
 
     summer = RnnSummarizer()
     #summer.summary()
-    #summer.load_weights("model/final.ckpt")
-    #summer.fit(test_comments, test_comments_category, None, None, epochs=100)
+    summer.load_weights("model/checkpoints/20210306-194752/cp-21.ckpt")
     summer.fit(sents, classifs, None, None, epochs=100)
-    summer.save_weights("model/final.ckpt")
-    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"], start_data=0.0))
+    #summer.save_weights("model/final.ckpt")
+    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
+    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
+    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
     # 0, 2, 1
