@@ -1,10 +1,10 @@
 <div>
   <h1 class="main">hey there, looks like you could use some help understanding a legal contract. let us have a look at it</h1>
   <div class="upload">
-    <form action="http://localhost:5000/processpdf" method="POST" style="display:none" id="oldform" enctype="multipart/form-data">
-      <input type="file" id="fileElem" accept="application/pdf" name="file" style="display:none">
-      <input type="number" id="id" name="id" style="display:none">
-      <input type="submit" style="display:none" id="fileSubmit"/>
+    <form action="http://localhost:5000/processpdf" method="POST" style="visibility:hidden; position: absolute;" id="oldform" enctype="multipart/form-data">
+      <input type="file" id="fileElem" accept="application/pdf" name="file" style="visibility:hidden; position: absolute;">
+      <input type="number" id="id" name="id" style="visibility:hidden; position: absolute;">
+      <input type="submit" style="visibility:hidden; position: absolute;" id="fileSubmit"/>
     </form>
     <button id="fileSelect">pdf upload</button>
   </div>
