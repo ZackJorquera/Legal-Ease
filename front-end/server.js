@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const router = express.Router();
 const ejs = require('ejs');
-const fs = require("fs");
 const fetch = require("node-fetch");
 
 
