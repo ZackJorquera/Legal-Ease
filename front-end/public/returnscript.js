@@ -123,15 +123,15 @@ const legal_to_eng = (sentenceList) => {
 
   for(sentence of sentenceList){
     let words = sentence.split(" ");
-    words = words.map((i) => i.replace(/\W/g, ''));
+    let twords = words.map((i) => i.replace(/\W/g, ''));
     for(let i = 0; i < words.length; i++){
-      if(((i + 1) < words.length) && (dict_leg_to_en[(String(words[i]).toLowerCase() + ' ' + String(words[i+1]).toLowerCase())])){
-        words[i] = `<div class="tooltip">${words[i] + " " + words[i + 1]}<span class="tooltiptext">${String(dict_leg_to_en[(String(words[i]).toLowerCase() + ' ' + String(words[i+1]).toLowerCase())])}</span></div>`
+      if(((i + 1) < words.length) && (dict_leg_to_en[(String(twords[i]).toLowerCase() + ' ' + String(twords[i+1]).toLowerCase())])){
+        words[i] = `<div class="tooltip">${words[i] + " " + words[i + 1]}<span class="tooltiptext">${String(dict_leg_to_en[(String(twords[i]).toLowerCase() + ' ' + String(twords[i+1]).toLowerCase())])}</span></div>`
         words[i+1] = '';
         i ++;
       } 
-      else if (dict_leg_to_en[String(words[i]).toLowerCase()]){
-        words[i] = `<div class="tooltip">${words[i]}<span class="tooltiptext">${String(dict_leg_to_en[(String(words[i]).toLowerCase())])}</span></div>`
+      else if (dict_leg_to_en[String(twords[i]).toLowerCase()]){
+        words[i] = `<div class="tooltip">${words[i]}<span class="tooltiptext">${String(dict_leg_to_en[(String(twords[i]).toLowerCase())])}</span></div>`
       }
     }
     sen = words.join(' ');
