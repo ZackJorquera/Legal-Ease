@@ -1,0 +1,5 @@
+/ignore-me
+/front-end/node_modules
+.idea/
+model/
+logs/
