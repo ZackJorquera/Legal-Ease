@@ -18,6 +18,10 @@ class PDFParser(object):
         self.__pdf_manager = PDFResourceManager()
         self.__pdf_file = open(file, 'rb')
 
+    def __del__(self):
+        if self.__pdf_file is not None:
+            self.__pdf_file.close()
+
     def _parse_with_ocr(self):
         pass
 
@@ -35,13 +39,15 @@ class PDFParser(object):
         return text
 
     def convert_to_sentences(self, ret_type=str):
-        pass
+        return parse_sentences(self.convert_to_pure_text(), Sentence)
+
 
 
 if __name__ == '__main__':
     pdf_file = r"C:\Users\jorqu\Documents\Kenneth Himma _Ethicsal Issues Involving Computer Security..._.pdf"
     pdf_parser = PDFParser(pdf_file)
-    print(pdf_parser.convert_to_pure_text())
+    sents = pdf_parser.convert_to_sentences()
+    print(sents)
 
 
 
