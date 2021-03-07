@@ -16,6 +16,8 @@ CONFIG_INTERNAL_UNITS = 128
 CONFIG_DECODER_DENSE_OUTPUTS = 4
 CONFIG_MAX_INPUT_LEN = 10000
 
+strategy = tf.distribute.MirroredStrategy()
+
 
 #  help from: https://github.com/chen0040/keras-text-summarization/blob/11df7c7bf30de8ccd8aecef5a551c136c85f0092/keras_text_summarization/library/seq2seq.py#L396
 class RnnSummarizer(object):
@@ -75,19 +77,20 @@ class RnnSummarizer(object):
         # this is complicated, i will comment (or ask me, i think it understands)
         #model = keras.Model(encoder_input, dense_output)
 
-        model = keras.Sequential([
-            layers.Input(shape=(None,), name='encoder_input'),
-            layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
-                             input_length=CONFIG_MAX_INPUT_LEN),
-            layers.Bidirectional(layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=False, name="encoder")),
-            layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
-        ])
+        with strategy.scope():
+            model = keras.Sequential([
+                layers.Input(shape=(None,), name='encoder_input'),
+                layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
+                                 input_length=CONFIG_MAX_INPUT_LEN),
+                layers.Bidirectional(layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=False, name="encoder")),
+                layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
+            ])
 
-        self.max_input_seq_length = CONFIG_MAX_INPUT_LEN
+            self.max_input_seq_length = CONFIG_MAX_INPUT_LEN
 
-        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-        backend.set_value(model.optimizer.learning_rate, 0.01)
+            backend.set_value(model.optimizer.learning_rate, 0.01)
         self.model = model
 
         # # we use the encoder_model_get_state and encoder_model_with_state to interface with the model
@@ -130,29 +133,30 @@ class RnnSummarizer(object):
         checkpoint = keras.callbacks.ModelCheckpoint(model_dir_path + '/cp-{epoch}.ckpt', save_weights_only=True)
         tb_cb = tf.keras.callbacks.TensorBoard(log_dir=f'./logs/{now.strftime("%Y%m%d-%H%M%S")}', update_freq='epoch', profile_batch=2,)
 
-        x_train = [one_hot(x_elem, self.vocab_size) for x_elem in x_train]
-        x_train = pad_sequences(x_train, maxlen=self.max_input_seq_length)
-        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
+        with strategy.scope():
+            x_train = [one_hot(x_elem, self.vocab_size) for x_elem in x_train]
+            x_train = pad_sequences(x_train, maxlen=self.max_input_seq_length)
+            x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
-        if isinstance(y_train[0], list):
-            y_train_tmp = np.zeros((len(y_train), CONFIG_DECODER_DENSE_OUTPUTS))
-            for i, el in enumerate(y_train):
-                y_train_tmp[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
-            y_train = y_train_tmp
-        else:
-            y_train = np.array(y_train)
-            y_train = keras.utils.to_categorical(y_train, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
+            if isinstance(y_train[0], list):
+                y_train_tmp = np.zeros((len(y_train), CONFIG_DECODER_DENSE_OUTPUTS))
+                for i, el in enumerate(y_train):
+                    y_train_tmp[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
+                y_train = y_train_tmp
+            else:
+                y_train = np.array(y_train)
+                y_train = keras.utils.to_categorical(y_train, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
 
-        if x_test is not None and y_test is not None:
-            x_test = [one_hot(x_elem, self.vocab_size) for x_elem in x_test]
-            x_test = pad_sequences(x_test, maxlen=self.max_input_seq_length)
-            x_test = x_test.reshape((x_test.shape[0], x_test.shape[0], 1))
+            if x_test is not None and y_test is not None:
+                x_test = [one_hot(x_elem, self.vocab_size) for x_elem in x_test]
+                x_test = pad_sequences(x_test, maxlen=self.max_input_seq_length)
+                x_test = x_test.reshape((x_test.shape[0], x_test.shape[0], 1))
 
-            y_test = keras.utils.to_categorical(y_test, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
-        else:
-            x_test, y_test = None, None
+                y_test = keras.utils.to_categorical(y_test, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
+            else:
+                x_test, y_test = None, None
 
-        history = self.model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, callbacks=[checkpoint, tb_cb])
+            history = self.model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, callbacks=[checkpoint, tb_cb])
 
         return history
 
@@ -231,9 +235,9 @@ if __name__ == '__main__':
 
     summer = RnnSummarizer()
     #summer.summary()
-    summer.load_weights("model/checkpoints/20210306-194752/cp-21.ckpt")
+    #summer.load_weights("model/checkpoints/20210306-194752/cp-21.ckpt")
     summer.fit(sents, classifs, None, None, epochs=100)
-    #summer.save_weights("model/final.ckpt")
+    summer.save_weights("model/final.ckpt")
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
