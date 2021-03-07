@@ -42,22 +42,8 @@ class PDFParser(object):
         return parse_sentences(self.convert_to_pure_text(), Sentence)
 
 
-
-if __name__ == '__main__':
-    # pdf_file =  r"C:\Users\jorqu\Downloads\LeaseRenewalAgreement_12222020.pdf"
-    # pdf_parser = PDFParser(pdf_file)
-    # sents = pdf_parser.convert_to_sentences()
-    # print(sents)
-
-    pdf_file = r"C:\Users\jorqu\Downloads\LeaseRenewalAgreement_12222020.pdf"
+def pdf_parser(pdf_file):
     pdf_parser = PDFParser(pdf_file)
-    text = pdf_parser.convert_to_pure_text()
-    from summarizer import SummarizerSettings, Summarizer
-    summarizer = Summarizer(text=text)
-    val, summary = summarizer.get_optimal_subset_by_percent_words(.10, ret_as="str")
-
-    # Write out summary
-    with open('output.txt', 'w+') as w_file:
-        w_file.write(summary)
-
+    sents = pdf_parser.convert_to_sentences()
+    return sents
 
