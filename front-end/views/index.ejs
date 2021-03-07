@@ -4,28 +4,25 @@
     <meta charset="utf-8">
 
   <title>Little Lawyer</title>
-
-    <link rel="stylesheet" href="style.css">
+    <base href="/">
+    <link rel="stylesheet" type="text/css" href="style.css">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@800&display=swap" rel="stylesheet">
-    <script src="script.js"></script>
   </head>
   <body>
 
-    <ul>
-      <li class="logo"><img src="assets/tempIcon.png"/ alt="tempIcon"></li>
-    </ul>
+    <%- include('partials/header'); %>
     
 
     <div class="box">
-      <div>
-        <h1 class="main">hey there, looks like you could use some help understanding a legal contract. let us have a look at it</h1>
-      </div>
+      <%- include('partials/intro'); %>
+      <%- include('partials/footer'); %>
     </div>
     
     <div id="triangle"></div>
 
 
   </body>
-
+      <script src="script.js"></script>
+      <script src="returnscript.js"></script>
 </html>
