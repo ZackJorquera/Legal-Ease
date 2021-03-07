@@ -4,8 +4,10 @@ from werkzeug.utils import secure_filename
 import os
 #from summarizer import Summarizer
 from pdf_parser import pdf_parser
+
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+app.secret_key = 'super secret key'
 app.config['UPLOAD_FOLDER'] = "uploads/"
 @app.route('/', methods=['GET'])
 def home():
@@ -29,7 +31,7 @@ def process_pdf():
         return ""
 @app.route('/processpdf/<ids>', methods=['GET', 'POST'])
 def return_data(ids):
-    return session['data'].pop()
+    return session.pop('data', None)
     
     
 @app.route('/api/summarizetext', methods=['GET'])
