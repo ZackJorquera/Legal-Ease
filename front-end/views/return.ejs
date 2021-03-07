@@ -26,7 +26,7 @@
       <script src="returnscript.js"></script>
       <script>
         var tA = <%-JSON.stringify(data) %>;
-        tA = tA.match(/.*?[?!.\n↵]/g);
+        tA = tA.split(/\r?\n/);
         legal_to_eng(tA);
       </script>
 </html>
