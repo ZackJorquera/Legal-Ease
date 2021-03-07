@@ -9,10 +9,10 @@ from datetime import datetime
 
 
 # TODO: move to `__init__` input
-CONFIG_MAX_WORDS = 1000
-CONFIG_EMBEDDING_OUTPUT_SIZE = 128
+CONFIG_MAX_WORDS = 1000  # 10000
+CONFIG_EMBEDDING_OUTPUT_SIZE = 20  # 128
 CONFIG_INTERNAL_UNITS = 128
-CONFIG_DECODER_DENSE_OUTPUTS = 3
+CONFIG_DECODER_DENSE_OUTPUTS = 4
 CONFIG_MAX_INPUT_LEN = 10000
 
 
@@ -113,7 +113,7 @@ class RnnSummarizer(object):
         if model_dir_path is None:
             model_dir_path = f'./model/checkpoints/{now.strftime("%Y%m%d-%H%M%S")}'
         if batch_size is None:
-            batch_size = 5
+            batch_size = 10
 
         checkpoint = keras.callbacks.ModelCheckpoint(model_dir_path + '/cp-{epoch}.ckpt', save_weights_only=True)
         tb_cb = tf.keras.callbacks.TensorBoard(log_dir=f'./logs/{now.strftime("%Y%m%d-%H%M%S")}', update_freq='epoch', profile_batch=2,)
@@ -122,8 +122,14 @@ class RnnSummarizer(object):
         x_train = pad_sequences(x_train, maxlen=self.max_input_seq_length)
         x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
-        y_train = np.array(y_train)
-        y_train = keras.utils.to_categorical(y_train, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
+        if isinstance(y_train[0], list):
+            y_train_tmp = np.zeros((len(y_train), CONFIG_DECODER_DENSE_OUTPUTS))
+            for i, el in enumerate(y_train):
+                y_train_tmp[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
+            y_train = y_train_tmp
+        else:
+            y_train = np.array(y_train)
+            y_train = keras.utils.to_categorical(y_train, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
 
         if x_test is not None and y_test is not None:
             x_test = [one_hot(x_elem, self.vocab_size) for x_elem in x_test]
@@ -158,7 +164,7 @@ class RnnSummarizer(object):
     #
     #     return output_data
 
-    def classify(self, sentence_list, normal=True):
+    def classify(self, sentence_list, recurrent=False, start_data=None):
         # TODO: allow for all uppercase to be different work
         encoded_lines = [one_hot(input_text_line, self.vocab_size) for input_text_line in sentence_list]
         encoded_full_doc = [item for sublist in encoded_lines for item in sublist]
@@ -169,13 +175,22 @@ class RnnSummarizer(object):
         states_value = self.encoder_model_get_state.predict(input_seq)
         output_data = []
 
-        if normal:
-            for input_line_seq in input_seq_lines:
-                output_tokens = self.model.predict([np.asarray(input_line_seq)])
+        if not recurrent:
+            if start_data is not None:
+                for input_line_seq in input_seq_lines:
+                    states_value = [np.ones((1,CONFIG_INTERNAL_UNITS)) * start_data, np.ones((1,CONFIG_INTERNAL_UNITS)) * start_data]
+                    output_tokens, _, _ = self.encoder_model_with_state.predict([input_line_seq]+states_value)
 
-                sample_token_idx = np.argmax(output_tokens[-1, :])
-                output_data.append(sample_token_idx)
-                print(output_tokens)
+                    sample_token_idx = np.argmax(output_tokens[-1, :])
+                    output_data.append(sample_token_idx)
+                    print(output_tokens)
+            else:
+                for input_line_seq in input_seq_lines:
+                    output_tokens = self.model.predict([input_line_seq])
+
+                    sample_token_idx = np.argmax(output_tokens[-1, :])
+                    output_data.append(sample_token_idx)
+                    print(output_tokens)
         else:
             for input_line_seq in input_seq_lines:
                 output_tokens, h, c = self.encoder_model_with_state.predict([np.asarray(input_line_seq)] + states_value)
@@ -189,59 +204,24 @@ class RnnSummarizer(object):
         return output_data
 
 
+def load_data(sent_file, class_file):
+    with open(sent_file, 'r') as sfr:
+        sents = [sent for sent in sfr.readlines()]
+    with open(class_file, 'r') as cfr:
+        classes = [[int(e) - 1 for e in classif.split(",")] for classif in cfr.readlines()]
+
+    return sents, classes
+
+
 if __name__ == '__main__':
-    test_comments = [
-        "This is a stupid example.",
-        "This is another statement, perhaps this will trick the network",
-        "I don't understand",
-        "What's up?",
-        "open the app",
-        "This is another example",
-        "Do what I tell you",
-        "come over here and listen",
-        "how do you know what to look for",
-        "Remember how good the concert was?",
-        "Who is the greatest basketball player of all time?",
-        "Eat your cereal.",
-        "Usually the prior sentence is not classified properly.",
-        "Don't forget about your homework!",
-        "Can the model identify a sentence without a question mark",
-        "Everything speculated here is VC money and financial bubble with unrelaible financial values. Zomato, uber, paytm, flipkart throw discounts at the rate of losses. May be few can survive at the end. This hurts a lot for SMB too.",
-        "I am trying to keep tabs on electric two-wheeler startup industry in India. Ather energy is emerging as a big name. Anyone knows how they are doing?",
-        "generally a pretty intuitive way to accomplish a task. Want to trash an app Drag it to the trash Want to print a PDF",
-        "Make sure ownership is clear and minimizing opportunities for such problematic outcomes in the second place",
-        "Stop the video and walk away."
-    ]
 
-    test_comments_category = [
-        "statement",
-        "statement",
-        "statement",
-        "question",
-        "command",
-        "statement",
-        "command",
-        "command",
-        "question",
-        "question",
-        "question",
-        "command",
-        "statement",
-        "command",
-        "question",
-        "statement",
-        "question",
-        "question",
-        "statement",
-        "command"
-    ]
-
-    test_comments_category = [0 if elem == "statement" else 1 if elem == "question" else 2 for elem in test_comments_category]
+    sents, classifs = load_data('data/sentences.txt', 'data/classifications.txt')
 
     summer = RnnSummarizer()
     #summer.summary()
-    summer.load_weights("model/final.ckpt")
-    summer.fit(test_comments, test_comments_category, None, None)
-    #summer.save_weights("model/final.ckpt")
-    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
+    #summer.load_weights("model/final.ckpt")
+    #summer.fit(test_comments, test_comments_category, None, None, epochs=100)
+    summer.fit(sents, classifs, None, None, epochs=100)
+    summer.save_weights("model/final.ckpt")
+    print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"], start_data=0.0))
     # 0, 2, 1
