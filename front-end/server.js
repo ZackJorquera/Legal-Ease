@@ -40,7 +40,7 @@ app.get('/contract/:id', function(req, res) {
 });
 
 app.get('/loading/:id', function(req, res) {
-  res.render('load', { id: req.params.id } );
+  res.render('load');
 });
 
 app.listen(port)
