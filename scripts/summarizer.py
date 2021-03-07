@@ -12,6 +12,8 @@ import lexnlp.extract.en.definitions
 import lexnlp.extract.en.dates
 import lexnlp.extract.en.durations
 import lexnlp.extract.en.money
+from rnn_sum import sentence_to_rnn_vals
+import os
 
 import nltk
 
@@ -41,6 +43,10 @@ class SummarizerSettings(Enum):
     HIGH_IMPORTANCE_VAL = 30#nditions and constraints
     MEDIUM_IMPORTANCE_VAL = 10
     LOW_IMPORTANCE_VAL = 5
+    RNN_AMBIGUOUS_VAL = 5
+    RNN_PREDATORY_VAL = 30
+    RNN_IMPORTANT_VAL = 20
+    RNN_UNIMPORTANT_VAL = 0
 
 
 
@@ -119,10 +125,17 @@ class Summarizer:
                     s.value = 0
 
         self._calculate_word_values()
+        checkpoint_dir = 'model'
+        if not os.path.exists('model') and os.path.exists('../model'):
+            checkpoint_dir = '../model'
+        sentence_to_rnn_vals(self.__sentences, checkpoint_dir)
 
         num_sentences = len(self.__sentences)
         for s in range(len(self.__sentences)):
             s_object = self.__sentences[s]
+
+            s_object.value += {0: SummarizerSettings.RNN_AMBIGUOUS_VAL.value, 1: SummarizerSettings.RNN_PREDATORY_VAL.value,
+                               2: SummarizerSettings.RNN_IMPORTANT_VAL.value, 3: SummarizerSettings.RNN_UNIMPORTANT_VAL.value}[s_object.rnn_val]
             #High Level Point Allocations
             important = False
             if len(list(legal.conditions.get_conditions(s_object.text))) > 0:

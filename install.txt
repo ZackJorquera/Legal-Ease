@@ -1,2 +1,7 @@
-# code i ran to install all libs
-conda install tensorflow
+# stuff i ran to install all libs
+pip install pdfminer sklearn nltk lexnlp
+conda install tensorflow  # i think pip would work too
+
+>>> import nltk
+>>> nltk.download('punkt')
+>>> nltk.download('averaged_perceptron_tagger')
