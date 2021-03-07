@@ -1,0 +1,2 @@
+# code i ran to install all libs
+conda install tensorflow
