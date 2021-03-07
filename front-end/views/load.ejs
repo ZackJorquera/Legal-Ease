@@ -28,12 +28,11 @@
       <script>
         setInterval(() => {
           async function fetchData() {
-            const response = await fetch(encodeURI('http://localhost:5000/processpdf/<%-JSON.stringify(id) %>'));
+            const response = await fetch(encodeURI('http://localhost:5000/processpdf/<%-Number(JSON.stringify(id)) %>'));
             const data = await response.text();
             return data;
           }
-          // fetchData().then(data => data ? window.location.href = encodeURI(`http://localhost:8080/contract/<%-JSON.stringify(id) %>`) : console.log());
-          fetchData().then(console.log());
+          fetchData().then(data => data ? window.location.href = encodeURI(`http://localhost:8080/contract/<%-Number(JSON.stringify(id)) %>`) : console.log());
         }, 100);
       </script>
 </html>
