@@ -20,8 +20,8 @@ strategy = tf.distribute.MirroredStrategy()
 
 
 #  help from: https://github.com/chen0040/keras-text-summarization/blob/11df7c7bf30de8ccd8aecef5a551c136c85f0092/keras_text_summarization/library/seq2seq.py#L396
+# https://www.tensorflow.org/tutorials/text/text_classification_rnn#create_the_model
 class RnnSummarizer(object):
-
     # def __init__(self):
     #     self.vocab_size = CONFIG_MAX_WORDS
     #     encoder_input = layers.Input(shape=(None,), name='encoder_input')
@@ -116,7 +116,8 @@ class RnnSummarizer(object):
     def load_weights(self, weight_file_path):
         #checkpoints = tf.train.get_checkpoint_state('checkpoints').all_model_checkpoint_paths
         #if os.path.exists(weight_file_path):
-        self.model.load_weights(weight_file_path)
+        with strategy.scope():
+            self.model.load_weights(weight_file_path)
 
     def save_weights(self, weight_file_path):
         self.model.save_weights(weight_file_path)
@@ -221,9 +222,9 @@ class RnnSummarizer(object):
 
 
 def load_data(sent_file, class_file):
-    with open(sent_file, 'r') as sfr:
+    with open(sent_file, 'r', encoding='utf-8') as sfr:
         sents = [sent for sent in sfr.readlines()]
-    with open(class_file, 'r') as cfr:
+    with open(class_file, 'r', encoding='utf-8') as cfr:
         classes = [[int(e) - 1 for e in classif.split(",")] for classif in cfr.readlines()]
 
     return sents, classes
@@ -235,7 +236,7 @@ if __name__ == '__main__':
 
     summer = RnnSummarizer()
     #summer.summary()
-    #summer.load_weights("model/checkpoints/20210306-194752/cp-21.ckpt")
+    #summer.load_weights("model/checkpoints/20210306-212520/cp-24.ckpt")
     summer.fit(sents, classifs, None, None, epochs=100)
     summer.save_weights("model/final.ckpt")
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
