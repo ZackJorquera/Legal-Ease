@@ -1,2 +1,6 @@
 # code i ran to install all libs
 conda install tensorflow
+
+# for the nodejs server
+`npm i` in root directory
+`npm start` to start the server 

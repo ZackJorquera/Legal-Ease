@@ -87,9 +87,10 @@ html, body {
 .disclaimer {
   position: absolute;
   bottom: 1%;
-  width: 1.5em !important;
-  height: 1.5em !important;
-  background-color: var(--mint);
+  width: 1.75em !important;
+  height: 1.75em !important;
+  /* background-color: lightgray; */
+  background-color: transparent;
   border-radius: 5000px;
   text-align: center;
   padding: 5px;
@@ -152,7 +153,7 @@ html, body {
   text-align: center;
   border-radius: 6px;
   position: absolute !important;
-  bottom: 150%;
+  bottom: 225%;
   left: 50%;
   margin-left: -160px;
   overflow-wrap: break-word !important;
@@ -259,6 +260,6 @@ hr {
 
 #warning {
   position: relative;
-  height: 1.5em;
+  height: 1.75em;
   bottom: 10%;
 }

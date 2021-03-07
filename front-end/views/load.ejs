@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<bod>
+<html>
   <head>
     <meta charset="utf-8">
 
@@ -17,7 +17,7 @@
     <div class="box">
       <h1 class="main">we're working on it</h1>
       <div class="loader"></div>
-      <!-- <img src="/assets/booba.gif" alt='fuck' style="height: 60vh"/> -->
+      <!-- <img src="/assets/booba.gif" alt='boopa' style="height: 60vh"/> -->
       <%- include('partials/footer'); %>
     </div>
     
@@ -28,11 +28,12 @@
       <script>
         setInterval(() => {
           async function fetchData() {
-            const response = await fetch('http://localhost:5000/processpdf/<%-JSON.stringify(id) %>');
+            const response = await fetch(encodeURI('http://localhost:5000/processpdf/<%-JSON.stringify(id) %>'));
             const data = await response.text();
             return data;
           }
-          fetchData().then(data => data != "" ? window.location.href = `http://localhost:8080/contract/<%-JSON.stringify(id) %>` : console.log("not found"));
+          // fetchData().then(data => data ? window.location.href = encodeURI(`http://localhost:8080/contract/<%-JSON.stringify(id) %>`) : console.log());
+          fetchData().then(console.log());
         }, 100);
       </script>
 </html>
