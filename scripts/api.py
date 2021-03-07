@@ -1,5 +1,5 @@
 import flask
-from flask import request, jsonify, render_template
+from flask import request, jsonify, render_template, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import os
 #from summarizer import Summarizer
@@ -7,12 +7,12 @@ from pdf_parser import pdf_parser
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 app.config['UPLOAD_FOLDER'] = "uploads/"
-
 @app.route('/', methods=['GET'])
 def home():
     return "<h1>Text Summarizer</h1><p>This site is a prototype API</p>"
 @app.route('/upload')
 def upload():
+    data = ""
     return render_template('upload.html')
 
 @app.route('/processpdf', methods=['GET', 'POST'])
@@ -20,10 +20,16 @@ def process_pdf():
     if request.method == 'POST':
         f = request.files['file']
         f.save(os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(f.filename)))
+        number = request.form['id']
         #        sentences = pdf_parser(f.filename)
-        return "HI WE DID IT"
+        # summarizer = Summarizer(sentences=sentences)
+        session['data'] = "HELLO"
+        return redirect(url_for(".return_data", ids=number))
     else:
         return ""
+@app.route('/processpdf/<ids>', methods=['GET', 'POST'])
+def return_data(ids):
+    return session['data'].pop()
     
     
 @app.route('/api/summarizetext', methods=['GET'])
