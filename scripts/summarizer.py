@@ -13,6 +13,7 @@ import lexnlp.extract.en.dates
 import lexnlp.extract.en.durations
 import lexnlp.extract.en.money
 from rnn_sum import sentence_to_rnn_vals
+import os
 
 import nltk
 
@@ -124,7 +125,10 @@ class Summarizer:
                     s.value = 0
 
         self._calculate_word_values()
-        sentence_to_rnn_vals(self.__sentences)  # , r"C:\Users\jorqu\Documents\HACKCU\model\20210306-223713\cp-5.ckpt"
+        checkpoint_dir = 'model'
+        if not os.path.exists('model') and os.path.exists('../model'):
+            checkpoint_dir = '../model'
+        sentence_to_rnn_vals(self.__sentences, checkpoint_dir)
 
         num_sentences = len(self.__sentences)
         for s in range(len(self.__sentences)):
