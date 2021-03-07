@@ -98,7 +98,7 @@ class RnnSummarizer(object):
                 layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
                                  input_length=CONFIG_MAX_INPUT_LEN),
                 layers.Bidirectional(layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=False, name="encoder")),
-                layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
+                layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS, activation='softmax')
             ])
 
             self.max_input_seq_length = CONFIG_MAX_INPUT_LEN
