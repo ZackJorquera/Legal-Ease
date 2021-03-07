@@ -18,6 +18,7 @@ class Sentence(object):
     _value = None
     _weight = None
     _length = None
+    _rnn_val = None
 
     def __init__(self, sentence, custom_weight=None):
         """
@@ -31,6 +32,7 @@ class Sentence(object):
             else:
                 raise TypeError("Sentence custom_weight must be of type int.")
         self._value = 0
+        self._rnn_val = 2
 
     def __len__(self):
         if self._length is None:
@@ -55,6 +57,14 @@ class Sentence(object):
             return len(self)  # test to see if self.__len__ works
         else:
             return self._weight
+
+    @property
+    def rnn_val(self):
+        return self._rnn_val
+
+    @rnn_val.setter
+    def rnn_val(self, val):
+        self._rnn_val = val
 
 
 def parse_sentences(text, ret_type=str):

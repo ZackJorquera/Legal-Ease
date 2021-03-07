@@ -7,6 +7,9 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras import backend
 import os
 from datetime import datetime
+from sentence import *
+import time
+from collections import Counter
 
 
 # TODO: move to `__init__` input
@@ -17,6 +20,18 @@ CONFIG_DECODER_DENSE_OUTPUTS = 4
 CONFIG_MAX_INPUT_LEN = 10000
 
 strategy = tf.distribute.MirroredStrategy()
+
+
+def timeme(method):
+    def wrapper(*args, **kw):
+        startTime = int(round(time.time() * 1000))
+        result = method(*args, **kw)
+        endTime = int(round(time.time() * 1000))
+
+        print(f"{str(method)} took {endTime - startTime}ms")
+        return result
+
+    return wrapper
 
 
 #  help from: https://github.com/chen0040/keras-text-summarization/blob/11df7c7bf30de8ccd8aecef5a551c136c85f0092/keras_text_summarization/library/seq2seq.py#L396
@@ -83,7 +98,7 @@ class RnnSummarizer(object):
                 layers.Embedding(input_dim=self.vocab_size, output_dim=CONFIG_EMBEDDING_OUTPUT_SIZE,
                                  input_length=CONFIG_MAX_INPUT_LEN),
                 layers.Bidirectional(layers.LSTM(CONFIG_INTERNAL_UNITS, return_state=False, name="encoder")),
-                layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS)
+                layers.Dense(CONFIG_DECODER_DENSE_OUTPUTS, activation='softmax')
             ])
 
             self.max_input_seq_length = CONFIG_MAX_INPUT_LEN
@@ -113,11 +128,15 @@ class RnnSummarizer(object):
         #self.encoder_model_get_state.summary()
         #self.encoder_model_with_state.summary()
 
-    def load_weights(self, weight_file_path):
-        #checkpoints = tf.train.get_checkpoint_state('checkpoints').all_model_checkpoint_paths
-        #if os.path.exists(weight_file_path):
+    def load_weights_unchecked(self, weight_file_path):
         with strategy.scope():
             self.model.load_weights(weight_file_path)
+
+    def load_weights_from_dir(self, weight_dir):
+        latest_ckpt = tf.train.latest_checkpoint(weight_dir)
+        if latest_ckpt is not None:
+            with strategy.scope():
+                self.model.load_weights(latest_ckpt)
 
     def save_weights(self, weight_file_path):
         self.model.save_weights(weight_file_path)
@@ -136,7 +155,7 @@ class RnnSummarizer(object):
 
         with strategy.scope():
             x_train = [one_hot(x_elem, self.vocab_size) for x_elem in x_train]
-            x_train = pad_sequences(x_train, maxlen=self.max_input_seq_length)
+            x_train = pad_sequences(x_train, maxlen=self.max_input_seq_length, padding='post')
             x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
             if isinstance(y_train[0], list):
@@ -144,13 +163,15 @@ class RnnSummarizer(object):
                 for i, el in enumerate(y_train):
                     y_train_tmp[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
                 y_train = y_train_tmp
+            elif isinstance(y_train, np.ndarray):
+                pass
             else:
                 y_train = np.array(y_train)
                 y_train = keras.utils.to_categorical(y_train, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
 
             if x_test is not None and y_test is not None:
                 x_test = [one_hot(x_elem, self.vocab_size) for x_elem in x_test]
-                x_test = pad_sequences(x_test, maxlen=self.max_input_seq_length)
+                x_test = pad_sequences(x_test, maxlen=self.max_input_seq_length, padding='post')
                 x_test = x_test.reshape((x_test.shape[0], x_test.shape[0], 1))
 
                 y_test = keras.utils.to_categorical(y_test, num_classes=CONFIG_DECODER_DENSE_OUTPUTS)
@@ -181,44 +202,39 @@ class RnnSummarizer(object):
     #
     #     return output_data
 
-    def classify(self, sentence_list, recurrent=False, start_data=None):
+    @timeme
+    def classify(self, sentence_list, batch_all=False):
         # TODO: allow for all uppercase to be different work
         encoded_lines = [one_hot(input_text_line, self.vocab_size) for input_text_line in sentence_list]
-        encoded_full_doc = [item for sublist in encoded_lines for item in sublist]
-        input_seq = np.array(encoded_full_doc).reshape((1,-1,1))
-        input_seq_lines = [np.array(encoded_line).reshape((1,-1,1)) for encoded_line in encoded_lines]
-        #print(input_seq, input_seq_lines)
+        #encoded_full_doc = [item for sublist in encoded_lines for item in sublist]
+        #input_seq = np.array(encoded_full_doc).reshape((1,-1,1))
+        if batch_all:
+            input_seq_lines = pad_sequences(encoded_lines, maxlen=self.max_input_seq_length, )
+            input_seq_lines = input_seq_lines.reshape((input_seq_lines.shape[0], input_seq_lines.shape[1], 1))
 
-        output_data = []
+            with strategy.scope():
+                output_tokens = self.model.predict(input_seq_lines)
 
-        if not recurrent:
-            if start_data is not None:
-                for input_line_seq in input_seq_lines:
-                    states_value = [np.ones((1,CONFIG_INTERNAL_UNITS)) * start_data, np.ones((1,CONFIG_INTERNAL_UNITS)) * start_data]
-                    output_tokens, _, _ = self.encoder_model_with_state.predict([input_line_seq]+states_value)
+            sample_token_idx = np.argmax(output_tokens, axis=1)
 
-                    sample_token_idx = np.argmax(output_tokens[-1, :])
-                    output_data.append(sample_token_idx)
-                    print(output_tokens)
-            else:
-                for input_line_seq in input_seq_lines:
-                    output_tokens = self.model.predict([input_line_seq])
+            print(sample_token_idx)
+            return sample_token_idx
 
-                    sample_token_idx = np.argmax(output_tokens[-1, :])
-                    output_data.append(sample_token_idx)
-                    print(output_tokens)
         else:
-            states_value = self.encoder_model_get_state.predict(input_seq)
+            input_seq_lines = [np.array(encoded_line).reshape((1,-1,1)) for encoded_line in encoded_lines]
+            #print(input_seq, input_seq_lines)
+
+            output_data = []
+
             for input_line_seq in input_seq_lines:
-                output_tokens, h, c = self.encoder_model_with_state.predict([np.asarray(input_line_seq)] + states_value)
+                output_tokens = self.model.predict(input_line_seq)
 
                 sample_token_idx = np.argmax(output_tokens[-1, :])
                 output_data.append(sample_token_idx)
-                print(output_tokens)
+                #print(output_tokens)
 
-                states_value = [h, c]
-
-        return output_data
+            print(output_data)
+            return output_data
 
 
 def load_data(sent_file, class_file):
@@ -227,16 +243,55 @@ def load_data(sent_file, class_file):
     with open(class_file, 'r', encoding='utf-8') as cfr:
         classes = [[int(e) - 1 for e in classif.split(",")] for classif in cfr.readlines()]
 
-    return sents, classes
+    x_train = np.array(sents)
+    y_train = np.zeros((len(classes), CONFIG_DECODER_DENSE_OUTPUTS))
+    for i, el in enumerate(classes):
+        y_train[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
+
+    # TODO: make better code, like why
+    sents = []
+    classes = []
+
+    sents = sents + list(x_train[np.where(y_train[:,0])]) + list(x_train[np.where(y_train[:,0])]) + list(x_train[np.where(y_train[:,0])]) + list(x_train[np.where(y_train[:,0])])
+    classes = classes + list(y_train[np.where(y_train[:,0])]) + list(y_train[np.where(y_train[:,0])]) + list(y_train[np.where(y_train[:,0])]) + list(y_train[np.where(y_train[:,0])])
+
+    sents = sents + list(x_train[np.where(y_train[:, 1])]) + list(x_train[np.where(y_train[:, 1])]) + list(x_train[np.where(y_train[:, 1])]) + list(x_train[np.where(y_train[:, 1])])
+    classes = classes + list(y_train[np.where(y_train[:, 1])]) + list(y_train[np.where(y_train[:, 1])]) + list(y_train[np.where(y_train[:, 1])]) + list(y_train[np.where(y_train[:, 1])])
+
+    sents = sents + list(x_train[np.where(y_train[:, 2])[0][:25]])
+    classes = classes + list(y_train[np.where(y_train[:, 2])[0][:25]])
+
+    sents = sents + list(x_train[np.where(y_train[:, 3])[0][:25]])
+    classes = classes + list(y_train[np.where(y_train[:, 3])[0][:25]])
+
+    x_train = np.array(sents)
+    y_train = np.array(classes)
+
+    p = np.random.permutation(len(sents))
+
+    distrib = np.min(np.sum(y_train, axis=0))
+
+    return x_train[p], y_train[p]
+
+
+def sentence_to_rnn_vals(sentences, rnn_weights_dir='model'):
+    summer = RnnSummarizer()
+    if rnn_weights_dir is not None:
+        summer.load_weights_from_dir(rnn_weights_dir)
+
+    sent_array_str = [sentence.text for sentence in sentences]
+    vals = summer.classify(sent_array_str)
+    for i in range(len(sentences)):
+        sentences[i].rnn_val = vals[i]
 
 
 if __name__ == '__main__':
-
     sents, classifs = load_data('data/sentences.txt', 'data/classifications.txt')
 
     summer = RnnSummarizer()
     #summer.summary()
-    #summer.load_weights("model/checkpoints/20210306-212520/cp-24.ckpt")
+    #summer.load_weights_unchecked("model/checkpoints/20210307-010803/cp-18.ckpt")
+    # summer.load_weights_from_dir('model')
     summer.fit(sents, classifs, None, None, epochs=100)
     summer.save_weights("model/final.ckpt")
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
