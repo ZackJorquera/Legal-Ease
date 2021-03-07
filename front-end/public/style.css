@@ -206,7 +206,7 @@ hr {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--gray); 
+  background: whitesmoke; 
   border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb {
