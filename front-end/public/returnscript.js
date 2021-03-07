@@ -120,6 +120,7 @@ const legal_to_eng = (sentenceList) => {
 
   lst = document.getElementById('summ');
   
+
   for(sentence of sentenceList){
     let words = sentence.split(" ");
     words = words.map((i) => i.replace(/\W/g, ''));
