@@ -1,5 +1,5 @@
-from pdf_parser import PDFParser
-from summarizer import Summarizer
+from scripts.pdf_parser import PDFParser
+from scripts.summarizer import Summarizer
 
 
 if __name__ == '__main__':

@@ -84,11 +84,11 @@ def knapsack_approx(w, v, max_weight,  eps):
     return recover_solution_alternative(alternative_knapsack(w, v_p), w, v_p, max_weight)
 
 
-def knapsack(w, v, max_weight):
-    if sum(v) < max_weight:
+def knapsack(w, v, max_weight, override_default_only=False):
+    if sum(v) < max_weight and not override_default_only:
         subset = recover_solution_alternative(alternative_knapsack(w, v), w, v, max_weight)
     else:
         subset = recover_solution_default(default_knapsack(w, v, max_weight), w)
-        opt_val = sum([v[i] for i in subset])
+    opt_val = sum([v[i] for i in subset])
     return opt_val, subset
 
