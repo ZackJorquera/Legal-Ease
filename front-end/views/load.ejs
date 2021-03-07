@@ -25,10 +25,14 @@
 
 
   </body>
-      <!-- <script src="loadscript.js"></script> -->
       <script>
         setInterval(() => {
-          fetch('http://localhost:5000/processpdf/<%-JSON.stringify(id) %>').then(req => req.text()).then(window.location.href = "http://localhost:8080/contract/<%-JSON.stringify(id) %>");
+          async function fetchData() {
+            const response = await fetch('http://localhost:5000/processpdf/<%-JSON.stringify(id) %>');
+            const data = await response.text();
+            return data;
+          }
+          fetchData().then(data => data != "" ? window.location.href = `http://localhost:8080/contract/<%-JSON.stringify(id) %>` : console.log("not found"));
         }, 100);
       </script>
 </html>

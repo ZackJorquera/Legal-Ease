@@ -3,10 +3,12 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 const ejs = require('ejs');
 const fetch = require("node-fetch");
-
+const cors = require('cors');
 
 const port = process.env.PORT || 8080
 const app = express()
+
+app.use(cors())
 app.set('view engine', 'ejs');
 app.use(bodyParser.json());
 
