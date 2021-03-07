@@ -1,5 +1,5 @@
 # stuff i ran to install all libs
-pip install pdfminer sklearn nltk lexnlp
+pip install pdfminer sklearn nltk lexnlp unidecode flask
 conda install tensorflow  # i think pip would work too
 
 >>> import nltk

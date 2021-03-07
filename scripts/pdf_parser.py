@@ -4,8 +4,10 @@ from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfpage import PDFPage
 from io import StringIO
+import unidecode
 import os
 
+REMOVE_REGEX = '[^a-zA-Z0-9\'\"]'
 
 class PDFParser(object):
     __pdf_file_loc = None
@@ -36,6 +38,11 @@ class PDFParser(object):
             interpreter.process_page(page)
 
         text = ret_str.getvalue()
+
+        text = unidecode.unidecode(text)
+        text = re.sub(r'(\r\n|\n){2,}', '.\n', text)
+        text = re.sub(r'[^\S\r\n]+', ' ', text)  # remove multiple space next to each other (but dont remove newlines)
+
         return text
 
     def convert_to_sentences(self, ret_type=str):

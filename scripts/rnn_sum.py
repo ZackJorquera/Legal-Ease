@@ -141,17 +141,19 @@ class RnnSummarizer(object):
     def save_weights(self, weight_file_path):
         self.model.save_weights(weight_file_path)
 
-    def fit(self, x_train, y_train, x_test, y_test, epochs=None, batch_size=None, model_dir_path=None):
+    def fit(self, x_train, y_train, x_test, y_test, epochs=None, batch_size=None, model_dir_path=None, log_dir_path=None):
         now = datetime.now()
         if epochs is None:
             epochs = 10
         if model_dir_path is None:
-            model_dir_path = f'./model/checkpoints/{now.strftime("%Y%m%d-%H%M%S")}'
+            model_dir_path = f'../model/checkpoints/{now.strftime("%Y%m%d-%H%M%S")}'
+        if log_dir_path is None:
+            log_dir_path = f'../logs/{now.strftime("%Y%m%d-%H%M%S")}'
         if batch_size is None:
             batch_size = 10
 
         checkpoint = keras.callbacks.ModelCheckpoint(model_dir_path + '/cp-{epoch}.ckpt', save_weights_only=True)
-        tb_cb = tf.keras.callbacks.TensorBoard(log_dir=f'./logs/{now.strftime("%Y%m%d-%H%M%S")}', update_freq='epoch', profile_batch=2,)
+        tb_cb = tf.keras.callbacks.TensorBoard(log_dir=log_dir_path, update_freq='epoch', profile_batch=2,)
 
         with strategy.scope():
             x_train = [one_hot(x_elem, self.vocab_size) for x_elem in x_train]
@@ -237,7 +239,7 @@ class RnnSummarizer(object):
             return output_data
 
 
-def load_data(sent_file, class_file):
+def load_data(sent_file, class_file, norm=False):
     with open(sent_file, 'r', encoding='utf-8') as sfr:
         sents = [sent for sent in sfr.readlines()]
     with open(class_file, 'r', encoding='utf-8') as cfr:
@@ -247,6 +249,9 @@ def load_data(sent_file, class_file):
     y_train = np.zeros((len(classes), CONFIG_DECODER_DENSE_OUTPUTS))
     for i, el in enumerate(classes):
         y_train[i] += np.sum(keras.utils.to_categorical(el, num_classes=CONFIG_DECODER_DENSE_OUTPUTS), axis=0)
+
+    if norm:
+        y_train = y_train/np.sum(y_train, axis=1)
 
     # TODO: make better code, like why
     sents = []
@@ -290,8 +295,8 @@ if __name__ == '__main__':
 
     summer = RnnSummarizer()
     #summer.summary()
-    #summer.load_weights_unchecked("model/checkpoints/20210307-010803/cp-18.ckpt")
-    # summer.load_weights_from_dir('model')
+    #summer.load_weights_unchecked("../model/checkpoints/20210307-010803/cp-18.ckpt")
+    # summer.load_weights_from_dir('../model')
     summer.fit(sents, classifs, None, None, epochs=100)
     summer.save_weights("model/final.ckpt")
     print(summer.classify(["This is a stupid example.", "Clean the desk.", "What is for lunch"]))
