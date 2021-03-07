@@ -2,8 +2,8 @@ import flask
 from flask import request, jsonify, render_template, redirect, url_for, session
 from werkzeug.utils import secure_filename
 import os
-#from summarizer import Summarizer
-from pdf_parser import pdf_parser
+from scripts.summarizer import Summarizer
+from scripts.pdf_parser import pdf_parser
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -23,9 +23,9 @@ def process_pdf():
         f = request.files['file']
         f.save(os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(f.filename)))
         number = request.form['id']
-        #        sentences = pdf_parser(f.filename)
-        # summarizer = Summarizer(sentences=sentences)
-        session['data'] = "HELLO"
+        sentences = pdf_parser(os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(f.filename)))
+        summarizer = Summarizer(sentences=sentences)
+        session['data'] = summarizer.get_optimal_subset_by_percent_words(.25, ret_as="str")
         return redirect(url_for(".return_data", ids=number))
     else:
         return ""
