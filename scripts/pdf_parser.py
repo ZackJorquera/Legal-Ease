@@ -42,8 +42,8 @@ class PDFParser(object):
         return parse_sentences(self.convert_to_pure_text(), Sentence)
 
 
-
 def pdf_parser(pdf_file):
     pdf_parser = PDFParser(pdf_file)
     sents = pdf_parser.convert_to_sentences()
     return sents
+
