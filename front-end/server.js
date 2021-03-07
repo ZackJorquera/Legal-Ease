@@ -2,16 +2,23 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const router = express.Router();
 const ejs = require('ejs');
+const fs = require("fs");
+
 
 const port = process.env.PORT || 8080
 const app = express()
 app.set('view engine', 'ejs');
+app.use(bodyParser.json());
 
 app.use(express.static(__dirname + '/public'));
 
-app.get('', function(req, res) {
+app.get('/', function(req, res) {
   res.render('index');
 });
+
+// app.post("/", function (req, res) {
+//     res.render('load');
+// });
 
 app.get('/contract', function(req, res) {
 
@@ -19,9 +26,9 @@ app.get('/contract', function(req, res) {
   res.render('return', {data} );
 });
 
-app.get('/loading', function(req, res) {
-  res.render('load');
-});
+// app.get('/loading', function(req, res) {
+//   res.render('load');
+// });
 
 app.listen(port)
 console.log(`Server listening at http://localhost:${port}`)

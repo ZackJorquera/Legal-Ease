@@ -98,7 +98,7 @@ html, body {
 .tooltip {
   position: relative;
   display: inline !important;
-  border-bottom: 1px dotted black;
+  border-bottom: 3px solid var(--mint);
 }
 
 .tooltip .tooltiptext {
@@ -117,6 +117,7 @@ html, body {
   overflow-wrap: break-word !important;
   font-family: Arial;
   font-size: medium;
+  opacity: 0.95;
 }
 
 .tooltip .tooltiptext::after {
