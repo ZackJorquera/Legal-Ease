@@ -89,6 +89,6 @@ def knapsack(w, v, max_weight):
         subset = recover_solution_alternative(alternative_knapsack(w, v), w, v, max_weight)
     else:
         subset = recover_solution_default(default_knapsack(w, v, max_weight), w)
-    opt_val = sum([v[i] for i in subset])
+        opt_val = sum([v[i] for i in subset])
     return opt_val, subset
 
