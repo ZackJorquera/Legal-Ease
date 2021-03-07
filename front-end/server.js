@@ -26,9 +26,9 @@ app.get('/contract', function(req, res) {
   res.render('return', {data} );
 });
 
-// app.get('/loading', function(req, res) {
-//   res.render('load');
-// });
+app.get('/loading', function(req, res) {
+  res.render('load');
+});
 
 app.listen(port)
 console.log(`Server listening at http://localhost:${port}`)
