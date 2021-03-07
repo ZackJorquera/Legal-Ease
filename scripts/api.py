@@ -1,8 +1,8 @@
 import flask
 from flask import request, jsonify, render_template
 from werkzeug.utils import secure_filename
-
-from summarizer import Summarizer
+import os
+#from summarizer import Summarizer
 from pdf_parser import pdf_parser
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -14,13 +14,18 @@ def home():
 @app.route('/upload')
 def upload():
     return render_template('upload.html')
+
 @app.route('/processpdf', methods=['GET', 'POST'])
 def process_pdf():
     if request.method == 'POST':
         f = request.files['file']
-        f.save(os.join(app.config['UPLOAD_FOLDER'],secure_filename(f.filename)))
-        sentences = pdf_parser(f.filename)
-        return "Hi sucessful"
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'],secure_filename(f.filename)))
+        #        sentences = pdf_parser(f.filename)
+        return "HI WE DID IT"
+    else:
+        return ""
+    
+    
 @app.route('/api/summarizetext', methods=['GET'])
 def api_summarize_text():
     headline = ""
@@ -33,10 +38,10 @@ def api_summarize_text():
         headline = str(request.args['headline'])
 
     # Create an empty list for our results
-    summarizer = Summarizer(text, headline)
-    _, summary = summarizer.get_optimal_subset_by_percent_words(.1, ret_as='str')
+ #   summarizer = Summarizer(text, headline)
+  #  _, summary = summarizer.get_optimal_subset_by_percent_words(.1, ret_as='str')
 
-    return summary
+    return ""
 
 
 app.run()
