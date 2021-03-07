@@ -78,7 +78,7 @@ html, body {
   float: left;
   display: block;
   padding: 1vh 1vw;
-  height: min(15vw, 20vh);
+  height: 10vh;
 }
 
 .disclaimer {
@@ -205,3 +205,12 @@ hr {
     transform: rotate(360deg);
   }
 } 
+
+.title {
+  left: 45vw;
+  top: -2vh;
+  font-family: "Open Sans", sans-serif;
+  font-size: 4.25vh;
+  color: whitesmoke;
+  position: absolute;
+}
